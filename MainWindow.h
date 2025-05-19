@@ -31,5 +31,7 @@ private:
     void setupUI();
     void setupMenu();
     void setupConnections();
+    void openEditor(const QModelIndex& index);
+
     void loadJson(const QString& filePath);
 };

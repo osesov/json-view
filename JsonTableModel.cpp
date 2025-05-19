@@ -1,4 +1,5 @@
 #include "JsonTableModel.h"
+#include "constants.h"
 
 #include "json.h"
 #include "Locale.h"
@@ -75,7 +76,7 @@ QVariant JsonTableModel::data(const QModelIndex &index, int role) const
                 return locale.toString(val.GetDouble());
             else {
                 // return "[...]"; // array, object, etc.
-                return QString::fromUtf8(toJsonString(val, 100));
+                return QString::fromUtf8(toJsonString(val, MAX_JSON_STRING_LENGTH));
             }
         }
     }

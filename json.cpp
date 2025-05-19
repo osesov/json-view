@@ -7,7 +7,7 @@ class TruncatingStream {
 public:
     typedef char Ch; // Character type
 
-    TruncatingStream(size_t limit) : _limit(limit), _buffer()
+    TruncatingStream(size_t limit) : _limit(limit), _overflown(false), _buffer()
     {
         _buffer.reserve(limit);
     }
@@ -21,20 +21,26 @@ public:
     {
         if (_buffer.size() < _limit)
             _buffer.push_back(c);
+        else
+            _overflown = true;
     }
 
     void Put(char c)
     {
         if (_buffer.size() < _limit)
             _buffer.push_back(c);
+        else
+            _overflown = true;
     }
 
     void Flush() {} // No-op
 
     const std::string& str() const { return _buffer; }
+    bool overflown() const { return _overflown; }
 
 private:
     size_t _limit;
+    bool _overflown;
     std::string _buffer;
 };
 
@@ -78,7 +84,12 @@ std::string toJsonString(const rapidjson::Value& value, size_t limit) {
     TruncatingStream truncatingStream(limit);
     rapidjson::Writer<TruncatingStream> writer(truncatingStream);
     value.Accept(writer);
-    return truncatingStream.str();
+
+    std::string result = truncatingStream.str();
+    if (truncatingStream.overflown()) {
+        result += "...";
+    }
+    return result;
 }
 
 std::string toJsonString(const rapidjson::Value& value) {

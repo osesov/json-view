@@ -1,10 +1,10 @@
 {
     "files.associations": {
-        "*.sqlbook": "sql",
-        "*.ndjson": "jsonl",
         "*.dbclient-js": "javascript",
         "*.embeddedhtml": "html",
         "*.json": "json",
+        "*.sqlbook": "sql",
+        "*.ndjson": "jsonl",
         "ostream": "cpp",
         "any": "cpp",
         "array": "cpp",
@@ -93,6 +93,7 @@
         "valarray": "cpp",
         "variant": "cpp",
         "qset": "cpp",
-        "qstring": "cpp"
+        "qstring": "cpp",
+        "qabstractitemmodel": "cpp"
     }
 }

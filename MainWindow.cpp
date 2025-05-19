@@ -67,6 +67,7 @@ void MainWindow::setupMenu() {
     connect(openAction, &QAction::triggered, this, &MainWindow::onOpenFile);
     connect(refreshAction, &QAction::triggered, this, &MainWindow::onRefresh);
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
+    connect(treeView, &QTreeView::clicked, this, &MainWindow::openEditor);
 }
 
 void MainWindow::setupConnections() {
@@ -125,4 +126,13 @@ void MainWindow::loadJson(const QString& filePath)
     }
 
     statusBar()->showMessage("Loaded " + filePath, 2000);
+}
+
+void MainWindow::openEditor(const QModelIndex& index)
+{
+    if (index.column() == TreeViewColumn::ValueColumn) {
+        auto* editor = treeView->indexWidget(index);
+        if (editor)
+            editor->setFocus(Qt::MouseFocusReason);
+    }
 }
