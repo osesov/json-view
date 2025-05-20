@@ -9,7 +9,7 @@ JsonTreeItem::JsonTreeItem(const rapidjson::Value* value, QString key, JsonTreeI
         const char* str = value->GetString();
         size_t len = value->GetStringLength();
         m_isMultiline = !!memchr(str, '\n', len);
-        printf("isMultiline: %d, %s\n", m_isMultiline, key.toUtf8().constData());
+        // printf("isMultiline: %d, %s\n", m_isMultiline, key.toUtf8().constData());
     }
     else {
         m_isMultiline = false;
