@@ -1,6 +1,8 @@
 #include "MainWindow.h"
 #include "JsonCellEditorDelegate.h"
 #include "treeViewUtil.h"
+#include "WheelSignalEmitter.h"
+#include "HoverEditorHandler.h"
 
 #include <QFileDialog>
 #include <QStatusBar>
@@ -9,6 +11,7 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QListView>
+#include <QScrollBar>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -73,6 +76,33 @@ void MainWindow::setupMenu() {
 void MainWindow::setupConnections() {
     connect(tableView->selectionModel(), &QItemSelectionModel::currentRowChanged,
             this, &MainWindow::onTableRowSelected);
+
+    // connect(treeView, &QTreeView::clicked, this, [this](const QModelIndex& index) {
+    //     if (index.column() == 1) {
+    //         auto* editor = treeView->indexWidget(index);
+    //         if (editor)
+    //             editor->setFocus(Qt::MouseFocusReason);
+    //     }
+    // });
+    // ---
+
+#if 0
+    connect(treeView, &QTreeView::clicked, this, &MainWindow::openEditorsForVisibleRows);
+    connect(treeView->verticalScrollBar(), &QScrollBar::valueChanged, this, &MainWindow::openEditorsForVisibleRows);
+    connect(treeView, &QTreeView::expanded, this, &MainWindow::openEditorsForVisibleRows);
+    connect(treeView, &QTreeView::collapsed, this, &MainWindow::openEditorsForVisibleRows);
+
+    auto* wheelEmitter = new WheelSignalEmitter();
+    treeView->viewport()->installEventFilter(wheelEmitter);
+
+    connect(wheelEmitter, &WheelSignalEmitter::wheelScrolled, this, &MainWindow::openEditorsForVisibleRows);
+#else
+
+    // make text editable on hover
+    treeView->viewport()->setMouseTracking(true);
+    auto* hoverHandler = new HoverEditorHandler(treeView, treeView);
+    treeView->viewport()->installEventFilter(hoverHandler);
+#endif
 }
 
 void MainWindow::onOpenFile() {
@@ -109,7 +139,9 @@ void MainWindow::onTableRowSelected(const QModelIndex& current, const QModelInde
     treeView->setModel(model);
     treeView->expand(QModelIndex());
 
-    openEditorsRecursive(treeView);
+    connect(treeView->model(), &QAbstractItemModel::rowsInserted, this, &MainWindow::openEditorsForVisibleRows);
+
+    // openEditorsRecursive(treeView);
 
     delete currentModel;
 }
@@ -136,3 +168,90 @@ void MainWindow::openEditor(const QModelIndex& index)
             editor->setFocus(Qt::MouseFocusReason);
     }
 }
+
+void MainWindow::processArguments(const QStringList& args) {
+    // Handle args as needed (ignore args[0] which is the executable path)
+    if (args.isEmpty()) {
+        return;
+    }
+
+    for (int i = 0; i < args.size(); ++i) {
+        QString arg = args[i];
+        loadJson(arg);
+    }
+}
+
+#if 0
+void MainWindow::openEditorsForVisibleRows() {
+    auto* model = treeView->model();
+    auto* viewport = treeView->viewport();
+    QRect visibleRect = viewport->rect();
+
+    for (int row = 0; row < model->rowCount(); ++row) {
+        QModelIndex index = model->index(row, TreeViewColumn::ValueColumn);
+        QRect indexRect = treeView->visualRect(index);
+        if (visibleRect.intersects(indexRect)) {
+            JsonTreeItem* item = JsonTreeItem::fromIndex(index);
+            if (item->isMultiline()) {
+                treeView->openPersistentEditor(index);
+            }
+        }
+
+        // Recursively handle children if expanded
+        QModelIndex child = model->index(row, 0);
+        if (treeView->isExpanded(child)) {
+            openEditorsForVisibleChildren(child);
+        }
+    }
+}
+
+void MainWindow::openEditorsForVisibleChildren(const QModelIndex& parent) {
+    auto* model = treeView->model();
+    for (int row = 0; row < model->rowCount(parent); ++row) {
+        QModelIndex index = model->index(row, TreeViewColumn::ValueColumn, parent);
+        QRect indexRect = treeView->visualRect(index);
+        if (treeView->viewport()->rect().intersects(indexRect)) {
+            JsonTreeItem* item = JsonTreeItem::fromIndex(index);
+            if (item->isMultiline()) {
+                treeView->openPersistentEditor(index);
+            }
+        }
+
+        QModelIndex child = model->index(row, 0, parent);
+        if (treeView->isExpanded(child)) {
+            openEditorsForVisibleChildren(child);
+        }
+    }
+}
+
+#else
+
+void MainWindow::openEditorsForVisibleRows()
+{
+    QTreeView* view = treeView;
+    if (!view || !view->model()) return;
+
+    const QRect visibleRect = view->viewport()->rect();
+    const int rowHeight = view->sizeHintForRow(0);
+    const int step = qMax(1, rowHeight / 2);
+
+    QSet<QModelIndex> seen;
+
+    for (int y = visibleRect.top(); y < visibleRect.bottom(); y += step) {
+        QModelIndex index = view->indexAt(QPoint(0, y));
+        if (!index.isValid()) continue;
+
+        QModelIndex valueIndex = index.sibling(index.row(), TreeViewColumn::ValueColumn);
+        if (seen.contains(valueIndex)) continue;
+        seen.insert(valueIndex);
+
+        JsonTreeItem* item = JsonTreeItem::fromIndex(valueIndex);
+
+        if (item->isMultiline()) {
+            view->openPersistentEditor(valueIndex);
+        }
+    }
+}
+
+
+#endif

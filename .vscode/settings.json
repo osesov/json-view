@@ -94,6 +94,8 @@
         "variant": "cpp",
         "qset": "cpp",
         "qstring": "cpp",
-        "qabstractitemmodel": "cpp"
+        "qabstractitemmodel": "cpp",
+        "qmainwindow": "cpp",
+        "qmodelindex": "cpp"
     }
 }

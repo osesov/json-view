@@ -16,6 +16,7 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(QWidget* parent = nullptr);
+    void processArguments(const QStringList& args);
 
 private slots:
     void onOpenFile();
@@ -34,4 +35,6 @@ private:
     void openEditor(const QModelIndex& index);
 
     void loadJson(const QString& filePath);
+    void openEditorsForVisibleRows();
+    // void openEditorsForVisibleChildren(const QModelIndex& parent);
 };

@@ -6,6 +6,7 @@
 
 #include <rapidjson/document.h>
 
+#include <QModelIndex>
 #include <QLocale>
 #include <QVariant>
 #include <QString>
@@ -13,22 +14,29 @@
 
 class JsonTreeItem {
 public:
-    JsonTreeItem(const rapidjson::Value* value, QString key = {}, JsonTreeItem* parent = nullptr);
+    JsonTreeItem(const rapidjson::Value* value, QString key = {}, JsonTreeItem* parent = nullptr, size_t index = 0);
     ~JsonTreeItem();
 
     void ensureChildren();
 
+    JsonTreeItem* parent() const;
     JsonTreeItem* child(int row);
     int childCount();
     int row() const;
 
     QVariant data(int column) const;
 
-    JsonTreeItem* parent() const;
+    bool isMultiline() const { return m_isMultiline; }
+
+    static JsonTreeItem * fromIndex(const QModelIndex& index) {
+        return static_cast<JsonTreeItem*>(index.internalPointer());
+    }
 
 private:
     const rapidjson::Value* m_value;
     QString m_key;
     JsonTreeItem* m_parent;
+    size_t m_index;
+    bool m_isMultiline;
     std::vector<JsonTreeItem*> m_children;
 };

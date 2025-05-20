@@ -30,8 +30,10 @@ void JsonCellEditorDelegate::setEditorData(QWidget *editor, const QModelIndex &i
 {
     QString text = index.data(Qt::DisplayRole).toString();
     QPlainTextEdit *edit = qobject_cast<QPlainTextEdit *>(editor);
-    if (edit)
+    if (edit) {
         edit->setPlainText(text);
+        // QMetaObject::invokeMethod(edit, "setFocus", Qt::QueuedConnection);
+    }
 }
 
 void JsonCellEditorDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &) const

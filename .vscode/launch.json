@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/JsonView",
-            "args": [],
+            "args": [ "parse.jsonl" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

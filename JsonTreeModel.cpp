@@ -65,3 +65,13 @@ QVariant JsonTreeModel::headerData(int section, Qt::Orientation orientation, int
     }
     return section == 0 ? "Key" : "Value";
 }
+
+Qt::ItemFlags JsonTreeModel::flags(const QModelIndex& index) const {
+    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
+    JsonTreeItem* item = JsonTreeItem::fromIndex(index);
+
+    // if (item->isMultiline()) {
+    //     return defaultFlags | Qt::ItemIsEditable;
+    // }
+    return defaultFlags;
+}
