@@ -14,7 +14,8 @@
 
 class JsonTreeItem {
 public:
-    JsonTreeItem(const rapidjson::Value* value, QString key = {}, JsonTreeItem* parent = nullptr, size_t index = 0);
+    JsonTreeItem(const rapidjson::Value* value, QString key);
+    JsonTreeItem(const rapidjson::Value* value, QString key, JsonTreeItem* parent, size_t index, bool lineExtension);
     ~JsonTreeItem();
 
     void ensureChildren();
@@ -26,7 +27,7 @@ public:
 
     QVariant data(int column) const;
 
-    bool isMultiline() const { return m_isMultiline; }
+    bool isMultiline() const { return m_isMultiline && m_lineExtension; }
 
     static JsonTreeItem * fromIndex(const QModelIndex& index) {
         return static_cast<JsonTreeItem*>(index.internalPointer());
@@ -38,5 +39,6 @@ private:
     JsonTreeItem* m_parent;
     size_t m_index;
     bool m_isMultiline;
+    bool m_lineExtension;
     std::vector<JsonTreeItem*> m_children;
 };

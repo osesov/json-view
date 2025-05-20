@@ -2,8 +2,19 @@
 
 #include "constants.h"
 
-JsonTreeItem::JsonTreeItem(const rapidjson::Value* value, QString key, JsonTreeItem* parent, size_t index)
-    : m_value(value), m_key(std::move(key)), m_parent(parent), m_index(index)
+JsonTreeItem::JsonTreeItem(const rapidjson::Value* value, QString key)
+    : JsonTreeItem(value, std::move(key), nullptr, 0, false)
+{
+}
+
+JsonTreeItem::JsonTreeItem(
+    const rapidjson::Value* value,
+    QString key,
+    JsonTreeItem* parent,
+    size_t index,
+    bool lineExtension
+)
+    : m_value(value), m_key(std::move(key)), m_parent(parent), m_index(index), m_lineExtension(lineExtension)
 {
     if (value && value->IsString()) {
         const char* str = value->GetString();
@@ -23,21 +34,23 @@ JsonTreeItem::~JsonTreeItem()
 
 void JsonTreeItem::ensureChildren()
 {
-    if (!m_children.empty() || !m_value->IsArray() && !m_value->IsObject())
+    if (!m_children.empty()) // children already known
         return;
 
     if (m_value->IsObject()) {
         size_t index = 0;
         for (auto it = m_value->MemberBegin(); it != m_value->MemberEnd(); ++it) {
             QString key = QString::fromUtf8(it->name.GetString(), it->name.GetStringLength());
-            m_children.push_back(new JsonTreeItem(&it->value, key, this, index++));
+            m_children.push_back(new JsonTreeItem(&it->value, key, this, index++, false));
         }
     } else if (m_value->IsArray()) {
         size_t index = 0;
         m_children.reserve(m_value->Size());
         for (rapidjson::SizeType i = 0; i < m_value->Size(); ++i) {
-            m_children.push_back(new JsonTreeItem(&(*m_value)[i], QString("[%1]").arg(i), this, index++));
+            m_children.push_back(new JsonTreeItem(&(*m_value)[i], QString("[%1]").arg(i), this, index++, false));
         }
+    } else if (m_value->IsString() && !m_lineExtension && m_isMultiline) {
+        m_children.push_back(new JsonTreeItem(m_value, QString("..."), this, 0, true));
     }
 }
 
@@ -83,7 +96,13 @@ QVariant JsonTreeItem::data(int column) const
     }
 
     if (column == TreeViewColumn::ValueColumn) {
-        if (m_value->IsString()) return QString::fromUtf8(m_value->GetString());
+        if (m_value->IsString()) {
+            if (!m_isMultiline || m_lineExtension) // return as is
+                return QString::fromUtf8(m_value->GetString());
+
+            QString str = QString::fromUtf8(m_value->GetString(), m_value->GetStringLength());
+            return str.first(str.indexOf('\n')) + "..."; // cut off the first line
+        }
         if (m_value->IsBool()) return m_value->GetBool() ? "true" : "false";
         if (m_value->IsInt64()) return locale.toString(m_value->GetInt64()); // qint64(m_value->GetInt64());
         if (m_value->IsUint64()) return locale.toString(m_value->GetUint64()); // qint64(m_value->GetInt64());
