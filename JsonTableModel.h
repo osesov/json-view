@@ -29,4 +29,5 @@ public slots:
 private:
     JsonFile* m_jsonFile;
     std::vector<QString> m_keys;
+    mutable std::map<std::string, QVariant> m_cache;
 };

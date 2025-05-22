@@ -41,4 +41,5 @@ private:
     bool m_isMultiline;
     bool m_lineExtension;
     std::vector<JsonTreeItem*> m_children;
+    size_t m_byteSize;
 };

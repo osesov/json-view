@@ -71,13 +71,13 @@ private:
     size_t _size;
 };
 
-size_t toJsonStringSize(const rapidjson::Value& value, size_t limit) {
+// size_t toJsonStringSize(const rapidjson::Value& value, size_t limit) {
 
-    CountingStream truncatingStream;
-    rapidjson::Writer<CountingStream> writer(truncatingStream);
-    value.Accept(writer);
-    return truncatingStream.size();
-}
+//     CountingStream truncatingStream;
+//     rapidjson::Writer<CountingStream> writer(truncatingStream);
+//     value.Accept(writer);
+//     return truncatingStream.size();
+// }
 
 std::string toJsonString(const rapidjson::Value& value, size_t limit) {
 

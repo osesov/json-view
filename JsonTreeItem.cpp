@@ -14,7 +14,11 @@ JsonTreeItem::JsonTreeItem(
     size_t index,
     bool lineExtension
 )
-    : m_value(value), m_key(std::move(key)), m_parent(parent), m_index(index), m_lineExtension(lineExtension)
+: m_value(value)
+, m_key(std::move(key))
+, m_parent(parent)
+, m_index(index)
+, m_lineExtension(lineExtension)
 {
     if (value && value->IsString()) {
         const char* str = value->GetString();
@@ -25,6 +29,8 @@ JsonTreeItem::JsonTreeItem(
     else {
         m_isMultiline = false;
     }
+
+    m_byteSize = toJsonString(*m_value).size();
 }
 
 JsonTreeItem::~JsonTreeItem()
@@ -91,7 +97,7 @@ QVariant JsonTreeItem::data(int column) const
     }
 
     if (column == TreeViewColumn::BytesColumn) {
-        return locale.toString(qint64(toJsonString(*m_value).size()));
+        return locale.toString(qint64(m_byteSize));
         // return m_value ? m_value->GetStringLength() : 0;
     }
 

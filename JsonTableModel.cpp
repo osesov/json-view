@@ -61,23 +61,33 @@ QVariant JsonTableModel::data(const QModelIndex &index, int role) const
         auto itr = json.FindMember(key.c_str());
         if (itr != json.MemberEnd())
         {
+            // check cache first
+            const auto it = m_cache.find(key);
+
+            if (it != m_cache.end())
+                return it->second;
+
+            // cache miss
             const auto &val = itr->value;
+            QVariant result;
             if (val.IsNull())
-                return QString("null");
-            if (val.IsString())
-                return QString::fromUtf8(val.GetString());
+                result = QString("null");
+            else if (val.IsString())
+                result = QString::fromUtf8(val.GetString());
             else if (val.IsInt64())
-                return locale.toString(val.GetInt64());
+                result = locale.toString(val.GetInt64());
             else if (val.IsUint64())
-                return locale.toString(val.GetUint64());
+                result = locale.toString(val.GetUint64());
             else if (val.IsBool())
-                return val.GetBool() ? "true" : "false";
+                result = val.GetBool() ? "true" : "false";
             else if (val.IsDouble())
-                return locale.toString(val.GetDouble());
+                result = locale.toString(val.GetDouble());
             else {
-                // return "[...]"; // array, object, etc.
-                return QString::fromUtf8(toJsonString(val, MAX_JSON_STRING_LENGTH));
+                result = QString::fromUtf8(toJsonString(val, MAX_JSON_STRING_LENGTH));
             }
+
+            m_cache[key] = result;
+            return result;
         }
     }
 
