@@ -61,8 +61,9 @@ QVariant JsonTableModel::data(const QModelIndex &index, int role) const
         auto itr = json.FindMember(key.c_str());
         if (itr != json.MemberEnd())
         {
+            std::string cacheKey = key + ":" + std::to_string(line.index);
             // check cache first
-            const auto it = m_cache.find(key);
+            const auto it = m_cache.find(cacheKey);
 
             if (it != m_cache.end())
                 return it->second;
@@ -86,7 +87,7 @@ QVariant JsonTableModel::data(const QModelIndex &index, int role) const
                 result = QString::fromUtf8(toJsonString(val, MAX_JSON_STRING_LENGTH));
             }
 
-            m_cache[key] = result;
+            m_cache[cacheKey] = result;
             return result;
         }
     }
