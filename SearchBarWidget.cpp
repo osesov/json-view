@@ -15,35 +15,28 @@ SearchBarWidget::SearchBarWidget(QWidget* parent)
 
     forwardBtn = new QToolButton(this);
     backwardBtn = new QToolButton(this);
-    restartCheck = new QCheckBox("Restart", this);
-
 
     forwardBtn->setIcon(QIcon::fromTheme("go-down"));   // or use right arrow
     backwardBtn->setIcon(QIcon::fromTheme("go-up"));    // or use left arrow
 
     forwardBtn->setToolTip("Find Next (F3)");
     backwardBtn->setToolTip("Find Previous (Shift+F3)");
-    restartCheck->setToolTip("Start from beginning");
 
     auto layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(searchEdit);
     layout->addWidget(backwardBtn);
     layout->addWidget(forwardBtn);
-    layout->addWidget(restartCheck);
     setLayout(layout);
 
     connect(searchEdit, &QLineEdit::returnPressed, this, [this]() {
-        emit searchRequested(searchEdit->text(), true, restartCheck->isChecked());
-        restartCheck->setChecked(false);
+        emit searchRequested(searchEdit->text(), true);
     });
     connect(forwardBtn, &QToolButton::clicked, this, [this]() {
-        emit searchRequested(searchEdit->text(), true, restartCheck->isChecked());
-        restartCheck->setChecked(false);
+        emit searchRequested(searchEdit->text(), true);
     });
     connect(backwardBtn, &QToolButton::clicked, this, [this]() {
-        emit searchRequested(searchEdit->text(), false, restartCheck->isChecked());
-        restartCheck->setChecked(false);
+        emit searchRequested(searchEdit->text(), false);
     });
 }
 

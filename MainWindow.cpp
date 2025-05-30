@@ -138,8 +138,8 @@ void MainWindow::setupConnections() {
         tableSearchBar->setFocus();
     });
 
-    connect(tableSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward, bool restart) {
-        tableModel->search(restart, forward, text, tableView);
+    connect(tableSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward) {
+        tableModel->search(forward, text, tableView, statusBar());
     });
 
     // setup tree search bar
@@ -150,13 +150,13 @@ void MainWindow::setupConnections() {
         treeSearchBar->setFocus();
     });
 
-    connect(treeSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward, bool restart) {
+    connect(treeSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward) {
         auto * treeModel = getTreeModel();
         if (!treeModel) {
             QMessageBox::warning(this, "Error", "Tree model is not set.");
             return;
         }
-        treeModel->search(restart, forward, text, treeView);
+        treeModel->search(forward, text, treeView, statusBar());
     });
 
     // hide bars on escape

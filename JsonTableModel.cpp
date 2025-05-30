@@ -134,7 +134,7 @@ void JsonTableModel::reload() {
     endResetModel();
 }
 
-void JsonTableModel::search(bool restartSearch, bool forward, const QString& query, QTableView* tableView)
+void JsonTableModel::search(bool forward, const QString& query, QTableView* tableView, QStatusBar * statusBar)
 {
     QApplication::setOverrideCursor(Qt::WaitCursor);
     if (searchFuture.isRunning()) {
@@ -142,8 +142,8 @@ void JsonTableModel::search(bool restartSearch, bool forward, const QString& que
         searchWatcher.waitForFinished();
     }
 
-    searchFuture = QtConcurrent::run([this, restartSearch, forward, query, tableView]() {
-        searchCore(restartSearch, forward, query, tableView);
+    searchFuture = QtConcurrent::run([this, forward, query, tableView, statusBar]() {
+        searchCore(forward, query, tableView, statusBar);
     });
 
     searchWatcher.setFuture(searchFuture);
@@ -160,43 +160,60 @@ void JsonTableModel::cancelSearch()
     }
 }
 
-void JsonTableModel::searchCore(bool restartSearch, bool forward, const QString& query, QTableView* tableView)
+void JsonTableModel::searchCore(bool forward, const QString& query, QTableView* tableView, QStatusBar * statusBar)
 {
     const int rowCount = m_jsonFile->size();
     if (rowCount == 0)
         return;
 
+    const int nextRow = forward ? +1 : -1;
+
+    QModelIndex index = tableView->currentIndex();
+    bool skipCurrent = false;
+
+    if (!index.isValid()) {
+        index = this->index(0, 0, QModelIndex());
+    }
+
+    else if (m_currentSearchIndex && *m_currentSearchIndex == index) {
+        skipCurrent = true; // don't search the current index again
+    }
+
+    else {
+        skipCurrent = true;
+    }
+
     const auto searchString = query.toStdString();
 
-    int beginRow = forward ? 0 : rowCount - 1;
-    int endRow = forward ? rowCount : -1;
-    int increment = forward ? 1 : -1;
+    while (index.isValid()) {
+        if (skipCurrent) {
+            skipCurrent = false;
+        } else {
 
-    int row = m_searchPosition && !restartSearch ? m_searchPosition->row : 0;
+            int row = index.row();
+            const auto line = m_jsonFile->lineText(row);
 
-    if (m_searchPosition && !restartSearch) {
-        row += increment;
-    }
+            if (line.find(searchString) != std::string_view::npos) {
+                m_currentSearchIndex = index; // store the current search index
 
-    for (; row != endRow; row += increment) {
-        const auto line = m_jsonFile->lineText(row);
+                // QModelIndex index = this->index(row, 0, QModelIndex());
+                tableView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+                tableView->selectionModel()->select(
+                    index,
+                    QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
+                );
 
-        // std::string str = toJsonString(line.doc);
-        if (line.find(searchString) != std::string_view::npos) {
-            m_searchPosition = SearchPosition{row};
+                tableView->setCurrentIndex(index);
 
-            QModelIndex index = this->index(row, 0, QModelIndex());
-            tableView->scrollTo(index, QAbstractItemView::PositionAtCenter);
-            tableView->selectionModel()->select(
-                index,
-                QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
-            );
+                statusBar->showMessage(tr("Found match for '%1' at row %2").arg(query, QString::number(row + 1)), 2000);
 
-            tableView->setCurrentIndex(index);
-
-            return; // stop at first match
+                return; // stop at first match
+            }
         }
+
+        index = index.sibling(index.row() + nextRow, 0); // move to next row
     }
 
-    m_searchPosition.reset(); // no match found
+    m_currentSearchIndex.reset(); // no match found
+    statusBar->showMessage(tr("No matches found for '%1'").arg(query), 2000);
 }

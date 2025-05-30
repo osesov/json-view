@@ -125,3 +125,42 @@ JsonTreeItem* JsonTreeItem::parent() const
 {
     return m_parent;
 }
+
+bool JsonTreeItem::match(const QString& query) const
+{
+    if (m_key.contains(query, Qt::CaseInsensitive))
+        return true;
+
+    if (m_value->IsString()) {
+        QString valueStr = QString::fromUtf8(m_value->GetString(), m_value->GetStringLength());
+        return valueStr.contains(query, Qt::CaseInsensitive);
+    }
+
+    if (m_value->IsBool()) {
+        return QString(m_value->GetBool() ? "true" : "false").contains(query, Qt::CaseInsensitive);
+    }
+
+    if (m_value->IsInt64()) {
+        return locale.toString(m_value->GetInt64()).contains(query, Qt::CaseInsensitive)
+            || QString::number(m_value->GetInt64()).contains(query, Qt::CaseInsensitive)
+            ;
+    }
+
+    if (m_value->IsUint64()) {
+        return locale.toString(m_value->GetUint64()).contains(query, Qt::CaseInsensitive)
+            || QString::number(m_value->GetUint64()).contains(query, Qt::CaseInsensitive)
+            ;
+    }
+
+    if (m_value->IsDouble()) {
+        return locale.toString(m_value->GetDouble()).contains(query, Qt::CaseInsensitive)
+            || QString::number(m_value->GetDouble()).contains(query, Qt::CaseInsensitive);
+            ;
+    }
+
+    if (m_value->IsNull()) {
+        return QString("null").contains(query, Qt::CaseInsensitive);
+    }
+
+    return false;
+}

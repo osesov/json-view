@@ -2,6 +2,7 @@
 
 #include <QAbstractItemModel>
 #include <QTreeView>
+#include <QStatusBar>
 
 #include "JsonTreeItem.h"
 
@@ -23,9 +24,14 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
-    void search(bool restartSearch, bool forward, const QString& query, QTreeView* tableView);
+    void search(bool forward, const QString& query, QTreeView* tableView, QStatusBar*);
     void cancelSearch();
 
 private:
     JsonTreeItem* m_root;
+    std::optional<QModelIndex> m_currentSearchIndex;
+
+    void revealMatchInTree(QTreeView* treeView, const QModelIndex& index);
+    void getPath(QModelIndex index, QStringList& path) const;
+
 };

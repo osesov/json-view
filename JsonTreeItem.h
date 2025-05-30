@@ -33,6 +33,8 @@ public:
         return static_cast<JsonTreeItem*>(index.internalPointer());
     }
 
+    bool match(const QString& query) const;
+
 private:
     const rapidjson::Value* m_value;
     QString m_key;

@@ -12,7 +12,7 @@ public:
     explicit SearchBarWidget(QWidget* parent = nullptr);
 
 signals:
-    void searchRequested(const QString& text, bool forward, bool restart);
+    void searchRequested(const QString& text, bool forward);
 
 protected:
     void showEvent(QShowEvent* event) override;
@@ -21,5 +21,4 @@ private:
     QLineEdit* searchEdit;
     QToolButton* forwardBtn;
     QToolButton* backwardBtn;
-    QCheckBox* restartCheck;
 };
