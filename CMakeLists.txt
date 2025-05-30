@@ -18,5 +18,6 @@ add_executable(JsonView
     treeViewUtil.cpp
     WheelSignalEmitter.cpp
     HoverEditorHandler.cpp
+    SearchBarWidget.cpp
 )
 target_link_libraries(JsonView PRIVATE Qt6::Widgets)

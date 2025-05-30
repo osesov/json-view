@@ -10,6 +10,7 @@
 #include "JsonFile.h"
 #include "JsonTableModel.h"
 #include "JsonTreeModel.h"
+#include "SearchBarWidget.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -28,6 +29,7 @@ private:
     JsonTableModel* tableModel = nullptr;
     QTableView* tableView = nullptr;
     QTreeView* treeView = nullptr;
+    SearchBarWidget* tableSearchBar = nullptr;
 
     void setupUI();
     void setupMenu();

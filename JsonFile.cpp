@@ -76,6 +76,7 @@ JsonFile::LineInfo JsonFile::line(size_t index)
         return LineInfo{
             .index = index,
             .size = line.range.size(),
+            .text = line.range,
             .doc = *line.value,
             .keysUpdated = false
         };
@@ -101,6 +102,7 @@ JsonFile::LineInfo JsonFile::line(size_t index)
     return LineInfo{
         .index = index,
         .size = line.range.size(),
+        .text = line.range,
         .doc = *line.value,
         .keysUpdated = keysUpdated
     };

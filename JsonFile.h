@@ -18,6 +18,7 @@ public:
     {
         size_t index;
         size_t size;
+        StringView text;
         const rapidjson::Document& doc;
         bool keysUpdated;
     };
@@ -49,6 +50,13 @@ public:
     }
 
     LineInfo line(size_t index);
+    StringView lineText(size_t index) const
+    {
+        if (index >= lines.size())
+            return StringView();
+
+        return lines[index].range;
+    }
 
 private:
     QFile file;

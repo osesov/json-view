@@ -96,6 +96,8 @@
         "qstring": "cpp",
         "qabstractitemmodel": "cpp",
         "qmainwindow": "cpp",
-        "qmodelindex": "cpp"
+        "qmodelindex": "cpp",
+        "qregularexpression": "cpp",
+        "qtconcurrent": "cpp"
     }
 }

@@ -4,7 +4,11 @@
 #include "json.h"
 #include "Locale.h"
 
+#include <regex>
+
 #include <QTimer>
+#include <QtConcurrent/QtConcurrent>
+#include <QApplication>
 
 JsonTableModel::JsonTableModel(JsonFile *jsonFile, QObject *parent)
     : QAbstractTableModel(parent), m_jsonFile(jsonFile)
@@ -128,4 +132,71 @@ void JsonTableModel::reload() {
     m_keys = m_jsonFile->topLevelKeys();
     // e.g., m_jsonFile->reload() if needed
     endResetModel();
+}
+
+void JsonTableModel::search(bool restartSearch, bool forward, const QString& query, QTableView* tableView)
+{
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    if (searchFuture.isRunning()) {
+        searchFuture.cancel();
+        searchWatcher.waitForFinished();
+    }
+
+    searchFuture = QtConcurrent::run([this, restartSearch, forward, query, tableView]() {
+        searchCore(restartSearch, forward, query, tableView);
+    });
+
+    searchWatcher.setFuture(searchFuture);
+    connect(&searchWatcher, &QFutureWatcher<void>::finished, this, [this]() {
+        QApplication::restoreOverrideCursor();
+    });
+}
+
+void JsonTableModel::cancelSearch()
+{
+    if (searchFuture.isRunning()) {
+        searchFuture.cancel();
+        searchWatcher.waitForFinished();
+    }
+}
+
+void JsonTableModel::searchCore(bool restartSearch, bool forward, const QString& query, QTableView* tableView)
+{
+    const int rowCount = m_jsonFile->size();
+    if (rowCount == 0)
+        return;
+
+    const auto searchString = query.toStdString();
+
+    int beginRow = forward ? 0 : rowCount - 1;
+    int endRow = forward ? rowCount : -1;
+    int increment = forward ? 1 : -1;
+
+    int row = m_searchPosition && !restartSearch ? m_searchPosition->row : 0;
+
+    if (m_searchPosition && !restartSearch) {
+        row += increment;
+    }
+
+    for (; row != endRow; row += increment) {
+        const auto line = m_jsonFile->lineText(row);
+
+        // std::string str = toJsonString(line.doc);
+        if (line.find(searchString) != std::string_view::npos) {
+            m_searchPosition = SearchPosition{row};
+
+            QModelIndex index = this->index(row, 0, QModelIndex());
+            tableView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+            tableView->selectionModel()->select(
+                index,
+                QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
+            );
+
+            tableView->setCurrentIndex(index);
+
+            return; // stop at first match
+        }
+    }
+
+    m_searchPosition.reset(); // no match found
 }

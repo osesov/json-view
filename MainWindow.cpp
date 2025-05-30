@@ -12,6 +12,8 @@
 #include <QDir>
 #include <QListView>
 #include <QScrollBar>
+#include <QShortcut>
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -27,22 +29,37 @@ void MainWindow::setupUI() {
     tabWidget->addTab(new QListView, "Tab 1");
     tabWidget->addTab(new QListView, "Tab 2");
 
+    tableSearchBar = new SearchBarWidget(this);
     tableView = new QTableView;
     treeView = new QTreeView;
-
-    tableModel = new JsonTableModel(&jsonFile, this);
-    tableView->setModel(tableModel);
-    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableView->setSelectionMode(QAbstractItemView::SingleSelection);
 
     auto* rightSplitter = new QSplitter(Qt::Vertical);
     rightSplitter->addWidget(tableView);
     rightSplitter->addWidget(treeView);
 
+    // add SearchWidget above the table/tree views using a layout
+    auto* rightLayoutWidget = new QWidget;
+    auto* rightLayout = new QVBoxLayout(rightLayoutWidget);
+    rightLayout->setContentsMargins(0, 0, 0, 0);
+    rightLayout->setSpacing(2);
+    rightLayout->addWidget(tableSearchBar);
+    rightLayout->addWidget(rightSplitter);
+
     mainSplitter->addWidget(tabWidget);
-    mainSplitter->addWidget(rightSplitter);
+    mainSplitter->addWidget(rightLayoutWidget);
     mainSplitter->setStretchFactor(1, 1);
 
+    // layout complete, do some set up...
+    // ...search box
+    tableSearchBar->hide();
+
+    // setup table view
+    tableModel = new JsonTableModel(&jsonFile, this);
+    tableView->setModel(tableModel);
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // setup tree view
     treeView->setUniformRowHeights(false);
     treeView->setWordWrap(true);
     treeView->setAutoScroll(true);
@@ -103,6 +120,27 @@ void MainWindow::setupConnections() {
     auto* hoverHandler = new HoverEditorHandler(treeView, treeView);
     treeView->viewport()->installEventFilter(hoverHandler);
 #endif
+
+    QShortcut* tableSearchShortcut = new QShortcut(QKeySequence("Ctrl+F"), tableView);
+    tableSearchShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+
+    connect(tableSearchShortcut, &QShortcut::activated, this, [this]() {
+        tableSearchBar->show();
+        tableSearchBar->setFocus();
+    });
+
+    QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), tableView);
+    connect(escapeShortcut, &QShortcut::activated, tableSearchBar, [this]() {
+
+        tableModel->cancelSearch();
+        tableSearchBar->hide();
+    });
+
+    connect(tableSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward, bool restart) {
+        tableModel->search(restart, forward, text, tableView);
+    });
+
+    // connect(searchEdit, &QLineEdit::returnPressed, this, &MainWindow::applySearch);
 }
 
 void MainWindow::onOpenFile() {
