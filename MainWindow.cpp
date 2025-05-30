@@ -29,29 +29,37 @@ void MainWindow::setupUI() {
     tabWidget->addTab(new QListView, "Tab 1");
     tabWidget->addTab(new QListView, "Tab 2");
 
-    tableSearchBar = new SearchBarWidget(this);
     tableView = new QTableView;
     treeView = new QTreeView;
 
-    auto* rightSplitter = new QSplitter(Qt::Vertical);
-    rightSplitter->addWidget(tableView);
-    rightSplitter->addWidget(treeView);
+    tableSearchBar = new SearchBarWidget(this);
+    auto * tableWidget = new QWidget;
+    auto * tablePanel = new QVBoxLayout(tableWidget);
+    tablePanel->setContentsMargins(0, 0, 0, 0);
+    tablePanel->setSpacing(2);
+    tablePanel->addWidget(tableSearchBar);
+    tablePanel->addWidget(tableView);
 
-    // add SearchWidget above the table/tree views using a layout
-    auto* rightLayoutWidget = new QWidget;
-    auto* rightLayout = new QVBoxLayout(rightLayoutWidget);
-    rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(2);
-    rightLayout->addWidget(tableSearchBar);
-    rightLayout->addWidget(rightSplitter);
+    treeSearchBar = new SearchBarWidget(this);
+    auto * treeWidget = new QWidget;
+    auto * treePanel = new QVBoxLayout(treeWidget);
+    treePanel->setContentsMargins(0, 0, 0, 0);
+    treePanel->setSpacing(2);
+    treePanel->addWidget(treeSearchBar);
+    treePanel->addWidget(treeView);
+
+    auto* rightSplitter = new QSplitter(Qt::Vertical);
+    rightSplitter->addWidget(tableWidget);
+    rightSplitter->addWidget(treeWidget);
 
     mainSplitter->addWidget(tabWidget);
-    mainSplitter->addWidget(rightLayoutWidget);
+    mainSplitter->addWidget(rightSplitter);
     mainSplitter->setStretchFactor(1, 1);
 
     // layout complete, do some set up...
     // ...search box
     tableSearchBar->hide();
+    treeSearchBar->hide();
 
     // setup table view
     tableModel = new JsonTableModel(&jsonFile, this);
@@ -121,26 +129,48 @@ void MainWindow::setupConnections() {
     treeView->viewport()->installEventFilter(hoverHandler);
 #endif
 
+    // setup table search bar
     QShortcut* tableSearchShortcut = new QShortcut(QKeySequence("Ctrl+F"), tableView);
-    tableSearchShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    tableSearchShortcut->setContext(Qt::ApplicationShortcut);
 
     connect(tableSearchShortcut, &QShortcut::activated, this, [this]() {
         tableSearchBar->show();
         tableSearchBar->setFocus();
     });
 
-    QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), tableView);
-    connect(escapeShortcut, &QShortcut::activated, tableSearchBar, [this]() {
-
-        tableModel->cancelSearch();
-        tableSearchBar->hide();
-    });
-
     connect(tableSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward, bool restart) {
         tableModel->search(restart, forward, text, tableView);
     });
 
-    // connect(searchEdit, &QLineEdit::returnPressed, this, &MainWindow::applySearch);
+    // setup tree search bar
+    QShortcut* treeSearchShortcut = new QShortcut(QKeySequence("Ctrl+Shift+F"), treeView);
+    treeSearchShortcut->setContext(Qt::ApplicationShortcut);
+    connect(treeSearchShortcut, &QShortcut::activated, this, [this]() {
+        treeSearchBar->show();
+        treeSearchBar->setFocus();
+    });
+
+    connect(treeSearchBar, &SearchBarWidget::searchRequested, this, [this](const QString& text, bool forward, bool restart) {
+        auto * treeModel = getTreeModel();
+        if (!treeModel) {
+            QMessageBox::warning(this, "Error", "Tree model is not set.");
+            return;
+        }
+        treeModel->search(restart, forward, text, treeView);
+    });
+
+    // hide bars on escape
+    QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), tableView);
+    connect(escapeShortcut, &QShortcut::activated, this, [this]() {
+        tableModel->cancelSearch();
+        tableSearchBar->hide();
+
+        auto * treeModel = getTreeModel();
+        if (treeModel) {
+            treeModel->cancelSearch();
+            treeSearchBar->hide();
+        }
+    });
 }
 
 void MainWindow::onOpenFile() {
@@ -161,6 +191,11 @@ void MainWindow::onRefresh() {
     // jsonFile.reload();  // assumes such method exists
     // tableModel->endResetModel();
     // statusBar()->showMessage("Refreshed", 2000);
+}
+
+JsonTreeModel * MainWindow::getTreeModel()
+{
+    return dynamic_cast<JsonTreeModel *>(treeView->model());
 }
 
 void MainWindow::onTableRowSelected(const QModelIndex& current, const QModelIndex&) {

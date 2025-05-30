@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractItemModel>
+#include <QTreeView>
 
 #include "JsonTreeItem.h"
 
@@ -21,6 +22,9 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
+
+    void search(bool restartSearch, bool forward, const QString& query, QTreeView* tableView);
+    void cancelSearch();
 
 private:
     JsonTreeItem* m_root;

@@ -1,5 +1,7 @@
 #include "JsonTreeModel.h"
 
+#include <QTreeView>
+
 JsonTreeModel::JsonTreeModel(const rapidjson::Value* rootValue, QObject* parent)
     : QAbstractItemModel(parent), m_root(new JsonTreeItem(rootValue, "root"))
 {
@@ -74,4 +76,14 @@ Qt::ItemFlags JsonTreeModel::flags(const QModelIndex& index) const {
     //     return defaultFlags | Qt::ItemIsEditable;
     // }
     return defaultFlags;
+}
+
+void JsonTreeModel::search(bool restartSearch, bool forward, const QString& query, QTreeView* tableView)
+{
+
+}
+
+void JsonTreeModel::cancelSearch()
+{
+
 }

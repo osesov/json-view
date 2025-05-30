@@ -30,6 +30,7 @@ private:
     QTableView* tableView = nullptr;
     QTreeView* treeView = nullptr;
     SearchBarWidget* tableSearchBar = nullptr;
+    SearchBarWidget* treeSearchBar = nullptr;
 
     void setupUI();
     void setupMenu();
@@ -38,5 +39,7 @@ private:
 
     void loadJson(const QString& filePath);
     void openEditorsForVisibleRows();
+    JsonTreeModel * getTreeModel();
+
     // void openEditorsForVisibleChildren(const QModelIndex& parent);
 };
