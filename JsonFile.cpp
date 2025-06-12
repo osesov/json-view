@@ -67,8 +67,6 @@ void JsonFile::close()
     }
 }
 
-
-
 JsonFile::LineInfo JsonFile::line(size_t index)
 {
     auto& line = this->lines[index];

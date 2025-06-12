@@ -14,6 +14,8 @@
 #include <QScrollBar>
 #include <QShortcut>
 #include <QVBoxLayout>
+#include <QApplication>
+#include <QClipboard>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -77,6 +79,8 @@ void MainWindow::setupUI() {
     treeView->setEditTriggers(QAbstractItemView::CurrentChanged | QAbstractItemView::SelectedClicked);
 
     setCentralWidget(mainSplitter);
+
+    fileWatcher = new QFileSystemWatcher(this);
     statusBar()->showMessage("Ready");
 }
 
@@ -129,6 +133,11 @@ void MainWindow::setupConnections() {
     treeView->viewport()->installEventFilter(hoverHandler);
 #endif
 
+    // context menu in tree view
+    treeView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(treeView, &QTreeView::customContextMenuRequested,
+        this, &MainWindow::onTreeContextMenuRequested);
+
     // setup table search bar
     QShortcut* tableSearchShortcut = new QShortcut(QKeySequence("Ctrl+F"), tableView);
     tableSearchShortcut->setContext(Qt::ApplicationShortcut);
@@ -171,6 +180,8 @@ void MainWindow::setupConnections() {
             treeSearchBar->hide();
         }
     });
+
+    connect(fileWatcher, &QFileSystemWatcher::fileChanged, this, &MainWindow::onFileChanged);
 }
 
 void MainWindow::onOpenFile() {
@@ -219,6 +230,36 @@ void MainWindow::onTableRowSelected(const QModelIndex& current, const QModelInde
     delete currentModel;
 }
 
+void MainWindow::onFileChanged(const QString& path) {
+
+    QModelIndex tableIndex;
+    QModelIndex treeIndex;
+    // save state
+    if (tableView && tableView->selectionModel())
+        tableIndex = tableView->selectionModel()->currentIndex();
+
+    if (treeView && treeView->selectionModel())
+        treeIndex = treeView->selectionModel()->currentIndex();
+
+    jsonFile.close();
+    jsonFile.open(path);
+    tableModel->reload();
+    treeView->setModel(nullptr); // Clear the tree view model
+
+    // restore table state
+    if (tableIndex.isValid() && tableView->model()) {
+        tableView->selectionModel()->setCurrentIndex(tableIndex, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        tableView->scrollTo(tableIndex);
+    }
+
+    if (treeIndex.isValid() && treeView->model()) {
+        treeView->selectionModel()->setCurrentIndex(treeIndex, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        treeView->scrollTo(treeIndex);
+    }
+
+    statusBar()->showMessage("File changed: " + path, 2000);
+}
+
 void MainWindow::loadJson(const QString& filePath)
 {
     setCursor(Qt::WaitCursor);
@@ -230,6 +271,10 @@ void MainWindow::loadJson(const QString& filePath)
         return;
     }
 
+    // remove all
+    fileWatcher->removePaths(fileWatcher->files());
+    // ... add new
+    fileWatcher->addPath(filePath);
     statusBar()->showMessage("Loaded " + filePath, 2000);
 }
 
@@ -325,6 +370,24 @@ void MainWindow::openEditorsForVisibleRows()
         }
     }
 }
-
-
 #endif
+
+void MainWindow::onTreeContextMenuRequested(const QPoint& pos)
+{
+    QModelIndex index = treeView->indexAt(pos);
+    if (!index.isValid())
+        return;
+
+    JsonTreeItem* item = JsonTreeItem::fromIndex(index);
+
+    QMenu menu(this);
+    menu.addAction("Copy value to clipboard", [=]() {
+        QApplication::clipboard()->setText(item->getText(false));
+    });
+
+    menu.addAction("Copy pretty value to clipboard", [=]() {
+        QApplication::clipboard()->setText(item->getText(true));
+    });
+
+    menu.exec(treeView->viewport()->mapToGlobal(pos));
+}

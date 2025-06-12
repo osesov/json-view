@@ -13,9 +13,17 @@ JsonTreeModel::~JsonTreeModel()
     delete m_root;
 }
 
+void JsonTreeModel::reload()
+{
+    beginResetModel();
+    delete m_root;
+    m_root = new JsonTreeItem(nullptr, "root");
+    endResetModel();
+}
+
 QModelIndex JsonTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    JsonTreeItem* parentItem = parent.isValid() ? static_cast<JsonTreeItem*>(parent.internalPointer()) : m_root;
+    JsonTreeItem* parentItem = parent.isValid() ? JsonTreeItem::fromIndex(parent) : m_root;
     JsonTreeItem* childItem = parentItem->child(row);
     return childItem ? createIndex(row, column, childItem) : QModelIndex();
 }
@@ -23,7 +31,7 @@ QModelIndex JsonTreeModel::index(int row, int column, const QModelIndex& parent)
 QModelIndex JsonTreeModel::parent(const QModelIndex& index) const
 {
     if (!index.isValid()) return QModelIndex();
-    JsonTreeItem* childItem = static_cast<JsonTreeItem*>(index.internalPointer());
+    JsonTreeItem* childItem = JsonTreeItem::fromIndex(index);
     JsonTreeItem* parentItem = childItem->parent();
     if (parentItem == m_root || !parentItem) return QModelIndex();
     return createIndex(parentItem->row(), 0, parentItem);
@@ -31,7 +39,7 @@ QModelIndex JsonTreeModel::parent(const QModelIndex& index) const
 
 int JsonTreeModel::rowCount(const QModelIndex& parent) const
 {
-    JsonTreeItem* parentItem = parent.isValid() ? static_cast<JsonTreeItem*>(parent.internalPointer()) : m_root;
+    JsonTreeItem* parentItem = parent.isValid() ? JsonTreeItem::fromIndex(parent) : m_root;
     return parentItem->childCount();
 }
 
@@ -45,7 +53,7 @@ QVariant JsonTreeModel::data(const QModelIndex& index, int role) const
     if (!index.isValid()) return {};
 
     if (role == Qt::DisplayRole) {
-        auto* item = static_cast<JsonTreeItem*>(index.internalPointer());
+        auto* item = JsonTreeItem::fromIndex(index);
         return item->data(index.column());
     }
 

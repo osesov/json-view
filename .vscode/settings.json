@@ -1,8 +1,8 @@
 {
     "files.associations": {
-        "*.dbclient-js": "javascript",
         "*.embeddedhtml": "html",
         "*.json": "json",
+        "*.dbclient-js": "javascript",
         "*.sqlbook": "sql",
         "*.ndjson": "jsonl",
         "ostream": "cpp",
@@ -98,6 +98,7 @@
         "qmainwindow": "cpp",
         "qmodelindex": "cpp",
         "qregularexpression": "cpp",
-        "qtconcurrent": "cpp"
+        "qtconcurrent": "cpp",
+        "qtableview": "cpp"
     }
 }

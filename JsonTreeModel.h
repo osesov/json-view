@@ -24,6 +24,7 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
+    void reload();
     void search(bool forward, const QString& query, QTreeView* tableView, QStatusBar*);
     void cancelSearch();
 

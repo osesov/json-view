@@ -12,6 +12,7 @@ struct Range
 };
 
 std::string toJsonString(const rapidjson::Value& value);
+std::string toJsonStringPretty(const rapidjson::Value& value);
 std::string toJsonString(const rapidjson::Value& value, size_t limit);
 std::optional<Range> matchJsonValue(const char* input, size_t length);
 

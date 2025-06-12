@@ -1,6 +1,7 @@
 #include "json.h"
 
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
 #include <rapidjson/writer.h>
 
 class TruncatingStream {
@@ -87,7 +88,7 @@ std::string toJsonString(const rapidjson::Value& value, size_t limit) {
 
     std::string result = truncatingStream.str();
     if (truncatingStream.overflown()) {
-        result += "...";
+        result += ">>>";
     }
     return result;
 }
@@ -227,4 +228,12 @@ void parseSequentialJson(std::string_view data, std::function<void(size_t, std::
     }
 
     // return results;
+}
+
+std::string toJsonStringPretty(const rapidjson::Value& value) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    buffer.Reserve(4096);
+    value.Accept(writer);
+    return std::string(buffer.GetString(), buffer.GetSize());
 }

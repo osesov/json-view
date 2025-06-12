@@ -34,6 +34,7 @@ public:
     }
 
     bool match(const QString& query) const;
+    QString getText(bool pretty) const;
 
 private:
     const rapidjson::Value* m_value;

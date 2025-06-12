@@ -109,16 +109,30 @@ QVariant JsonTreeItem::data(int column) const
             QString str = QString::fromUtf8(m_value->GetString(), m_value->GetStringLength());
             return str.first(str.indexOf('\n')) + "..."; // cut off the first line
         }
+        if (m_value->IsNull()) return "null";
         if (m_value->IsBool()) return m_value->GetBool() ? "true" : "false";
         if (m_value->IsInt64()) return locale.toString(m_value->GetInt64()); // qint64(m_value->GetInt64());
         if (m_value->IsUint64()) return locale.toString(m_value->GetUint64()); // qint64(m_value->GetInt64());
         if (m_value->IsDouble()) return locale.toString(m_value->GetDouble()); // m_value->GetDouble();
-        if (m_value->IsNull()) return "null";
         if (m_value->IsArray()) return QString::fromUtf8(toJsonString(*m_value, MAX_JSON_STRING_LENGTH));
         if (m_value->IsObject()) return QString::fromUtf8(toJsonString(*m_value, MAX_JSON_STRING_LENGTH));
     }
 
     return {};
+}
+
+QString JsonTreeItem::getText(bool pretty) const
+{
+    if (m_value->IsString()) return QString::fromUtf8(m_value->GetString());
+    if (m_value->IsNull()) return "null";
+    if (m_value->IsBool()) return m_value->GetBool() ? "true" : "false";
+    if (m_value->IsInt64()) return pretty ? locale.toString(m_value->GetInt64()) : QString::number(m_value->GetInt64()); // qint64(m_value->GetInt64());
+    if (m_value->IsUint64()) return pretty ? locale.toString(m_value->GetUint64()) : QString::number(m_value->GetUint64()); // qint64(m_value->GetInt64());
+    if (m_value->IsDouble()) return pretty ? locale.toString(m_value->GetDouble()) : QString::number(m_value->GetDouble()); // m_value->GetDouble();
+    if (m_value->IsArray()) return QString::fromUtf8(pretty ? toJsonStringPretty(*m_value) : toJsonString(*m_value));
+    if (m_value->IsObject()) return QString::fromUtf8(pretty ? toJsonStringPretty(*m_value) : toJsonString(*m_value));
+
+    return QString(); // Return empty string for unsupported types
 }
 
 JsonTreeItem* JsonTreeItem::parent() const
